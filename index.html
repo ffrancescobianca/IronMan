@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>IRON LOG – Diario allenamenti</title>
+<meta name="description" content="Diario allenamenti: pesi, corsa, passo, VO₂max e progressi.">
+<meta name="theme-color" content="#0b0b0d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="IRON LOG">
+<link rel="icon" type="image/png" sizes="192x192" href="icona-ironlog-192.png">
+<link rel="apple-touch-icon" href="icona-ironlog-512.png">
+<style>
+:root{--bg:#0b0b0d;--card:#151518;--card2:#1c1c20;--line:#2a2a30;--tx:#f2f2f4;--mut:#8b8b95;--or:#ff6a00;--or2:#ff8a2b;color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(900px 400px at 80% -10%,#ff6a0022,transparent),var(--bg);color:var(--tx);font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;min-height:100vh}
+.wrap{max-width:1000px;margin:0 auto;padding:20px 16px 40px}
+h1{font-size:22px;letter-spacing:3px;margin:0 0 18px;font-weight:800}
+h1 span{color:var(--or)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px}
+.stat b{display:block;font-size:22px;color:var(--or)}
+.stat small{color:var(--mut);font-size:12px}
+.grid{display:grid;grid-template-columns:1.2fr 1fr;gap:16px}
+@media(max-width:800px){.grid{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px}
+.head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.head h2{margin:0;font-size:17px;text-transform:capitalize}
+button{font:inherit;cursor:pointer;border:0;color:var(--tx)}
+.nav{background:var(--card2);width:36px;height:36px;border-radius:10px;font-size:18px}
+.nav:hover{background:var(--or)}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.dow{color:var(--mut);font-size:11px;text-align:center;padding:4px 0;text-transform:uppercase}
+.day{aspect-ratio:1;background:var(--card2);border:1px solid transparent;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:14px}
+.day:hover{border-color:var(--or)}
+.day.today{border-color:#ffffff55}
+.day.sel{background:var(--or);color:#111;font-weight:700}
+.day.empty{visibility:hidden}
+.dots{display:flex;gap:4px;height:8px}
+.dot{width:8px;height:8px;border-radius:50%}
+.dot.w{background:var(--or)}
+.dot.c{border:2px solid var(--or2);background:transparent}
+.day.sel .dot.w{background:#111}.day.sel .dot.c{border-color:#111}
+.legend{display:flex;gap:14px;margin-top:12px;color:var(--mut);font-size:12px;align-items:center}
+.legend .dot{display:inline-block;margin-right:5px;vertical-align:middle}
+.tabs{display:flex;gap:6px;margin:10px 0 14px}
+.tab{flex:1;padding:10px;border-radius:10px;background:var(--card2);color:var(--mut);font-weight:600}
+.tab.on{background:var(--or);color:#111}
+.row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px}
+label{font-size:11px;color:var(--mut);display:block;margin-bottom:3px}
+input{width:100%;background:var(--bg);border:1px solid var(--line);color:var(--tx);border-radius:10px;padding:10px;font:inherit}
+input:focus{outline:0;border-color:var(--or)}
+.add{width:100%;background:var(--or);color:#111;font-weight:700;padding:11px;border-radius:10px;margin-top:4px}
+.add:hover{background:var(--or2)}
+.item{display:flex;justify-content:space-between;align-items:center;background:var(--card2);border-radius:10px;padding:10px 12px;margin-top:8px;font-size:14px}
+.item small{color:var(--mut);display:block;margin-top:2px}
+.item b{color:var(--or2)}
+.x{background:none;color:var(--mut);font-size:18px}.x:hover{color:var(--or)}
+.live{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0}
+.live div{background:var(--bg);border:1px dashed var(--or);border-radius:10px;padding:10px;text-align:center}
+.live b{display:block;font-size:20px;color:var(--or)}
+.live small{color:var(--mut);font-size:11px}
+.hint{color:var(--mut);font-size:12px;margin-top:10px;line-height:1.4}
+.none{color:var(--mut);font-size:13px;margin-top:10px}
+select{background:var(--bg);border:1px solid var(--line);color:var(--tx);border-radius:10px;padding:9px 10px;font:inherit;max-width:55%}
+select:focus{outline:0;border-color:var(--or)}
+.pst{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+.pst div{background:var(--card2);border-radius:10px;padding:10px}
+.pst b{display:block;font-size:18px;color:var(--or)}
+.pst small{color:var(--mut);font-size:11px}
+.pcol{display:grid;gap:16px}
+.sub{font-size:12px;color:var(--mut);text-transform:uppercase;letter-spacing:1px;margin:14px 0 4px}
+svg.ch{width:100%;height:auto;display:block}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>IRON<span>LOG</span></h1>
+  <div class="tabs" style="max-width:380px;margin-bottom:16px"><button class="tab on" id="mc">📅 Calendario</button><button class="tab" id="mp">📈 Personale</button></div>
+  <div id="vcal">
+  <div class="stats">
+    <div class="stat"><b id="s1">0</b><small>Sedute pesi (mese)</small></div>
+    <div class="stat"><b id="s2">0</b><small>Sedute cardio (mese)</small></div>
+    <div class="stat"><b id="s3">0</b><small>Km corsi (mese)</small></div>
+    <div class="stat"><b id="s4">0</b><small>Volume sollevato (kg)</small></div>
+  </div>
+  <div class="grid">
+    <div class="card">
+      <div class="head"><button class="nav" id="prev">‹</button><h2 id="mt"></h2><button class="nav" id="next">›</button></div>
+      <div class="cal" id="cal"></div>
+      <div class="legend"><span><i class="dot w"></i>Pesi</span><span><i class="dot c"></i>Cardio</span></div>
+    </div>
+    <div class="card">
+      <div class="head"><h2 id="dt"></h2></div>
+      <div class="tabs"><button class="tab on" id="tw">🏋️ Pesi</button><button class="tab" id="tc">🏃 Cardio</button></div>
+      <div id="pw">
+        <label>Esercizio</label><input id="en" placeholder="es. Panca piana" style="margin-bottom:8px">
+        <div class="row">
+          <div><label>Serie</label><input id="es" type="number" min="1" inputmode="numeric"></div>
+          <div><label>Ripetizioni</label><input id="er" type="number" min="1" inputmode="numeric"></div>
+          <div><label>Peso (kg)</label><input id="ek" type="number" min="0" step="0.5" inputmode="decimal"></div>
+        </div>
+        <button class="add" id="aw">Aggiungi esercizio</button>
+        <div id="lw"></div>
+      </div>
+      <div id="pc" style="display:none">
+        <div class="row">
+          <div><label>Km</label><input id="ck" type="number" min="0" step="0.01" inputmode="decimal"></div>
+          <div><label>Minuti</label><input id="cm" type="number" min="0" inputmode="numeric"></div>
+          <div><label>Secondi</label><input id="cs" type="number" min="0" max="59" inputmode="numeric" placeholder="0"></div>
+        </div>
+        <div class="live"><div><b id="lp">–</b><small>min/km</small></div><div><b id="lv">–</b><small>VO₂max stimato</small></div></div>
+        <button class="add" id="ac">Salva corsa</button>
+        <div id="lc"></div>
+        <p class="hint">Il VO₂max è una stima (formula VDOT di Jack Daniels) e funziona meglio per corse di almeno 10–15 minuti a ritmo impegnativo.</p>
+      </div>
+    </div>
+  </div>
+  </div>
+  <div id="vpers" style="display:none">
+    <div class="pcol">
+      <div class="card">
+        <div class="head"><h2>Progressi pesi</h2><select id="pex"></select></div>
+        <div class="pst" id="pws"></div>
+        <div class="sub">Peso massimo per seduta (kg)</div>
+        <div id="pwc"></div>
+      </div>
+      <div class="card">
+        <div class="head"><h2>Progressi corsa</h2></div>
+        <div class="pst" id="prs"></div>
+        <div class="sub">Passo (min/km) · più in alto = più veloce</div>
+        <div id="prc"></div>
+        <div class="sub">VO₂max stimato</div>
+        <div id="pvc"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+let data={};
+try{data=JSON.parse(localStorage.getItem('ironlog')||'{}')}catch(e){}
+const save=()=>{try{localStorage.setItem('ironlog',JSON.stringify(data))}catch(e){}};
+const key=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+let view=new Date();view.setDate(1);
+let sel=key(new Date());
+const get=k=>data[k]||(data[k]={w:[],c:[]});
+const MESI=['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'];
+function pace(km,min){if(!km||!min)return null;const p=min/km,m=Math.floor(p),s=Math.round((p-m)*60);return s===60?(m+1)+':00':m+':'+String(s).padStart(2,'0')}
+function vo2(km,t){if(!km||!t)return null;const v=km*1000/t;
+ const o=-4.60+0.182258*v+0.000104*v*v;
+ const f=0.8+0.1894393*Math.exp(-0.012778*t)+0.2989558*Math.exp(-0.1932605*t);
+ const r=o/f;return r>0&&isFinite(r)?r:null}
+function render(){
+ const y=view.getFullYear(),mo=view.getMonth();
+ $('mt').textContent=MESI[mo]+' '+y;
+ const first=(new Date(y,mo,1).getDay()+6)%7,n=new Date(y,mo+1,0).getDate();
+ let h=['L','M','M','G','V','S','D'].map(d=>`<div class="dow">${d}</div>`).join('');
+ for(let i=0;i<first;i++)h+='<div class="day empty"></div>';
+ const today=key(new Date());let s1=0,s2=0,km=0,vol=0;
+ for(let d=1;d<=n;d++){
+  const k=key(new Date(y,mo,d)),e=data[k];
+  if(e){if(e.w.length){s1++;e.w.forEach(x=>vol+=x.s*x.r*x.k)}if(e.c.length){s2++;e.c.forEach(x=>km+=x.km)}}
+  h+=`<button class="day${k===today?' today':''}${k===sel?' sel':''}" data-k="${k}">${d}<span class="dots">${e&&e.w.length?'<i class="dot w"></i>':''}${e&&e.c.length?'<i class="dot c"></i>':''}</span></button>`;
+ }
+ $('cal').innerHTML=h;
+ $('s1').textContent=s1;$('s2').textContent=s2;$('s3').textContent=km.toFixed(1);$('s4').textContent=Math.round(vol).toLocaleString('it-IT');
+ const [yy,mm,dd]=sel.split('-').map(Number);
+ $('dt').textContent=new Date(yy,mm-1,dd).toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long'});
+ const e=data[sel]||{w:[],c:[]};
+ $('lw').innerHTML=e.w.length?e.w.map((x,i)=>`<div class="item"><div><b>${esc(x.n)}</b><small>${x.s} serie × ${x.r} rip · ${x.k} kg</small></div><button class="x" data-w="${i}">✕</button></div>`).join(''):'<div class="none">Nessun esercizio registrato.</div>';
+ $('lc').innerHTML=e.c.length?e.c.map((x,i)=>`<div class="item"><div><b>${x.km} km in ${fmt(x.t)}</b><small>${pace(x.km,x.t)} min/km · VO₂max ${x.v?x.v.toFixed(1):'–'}</small></div><button class="x" data-c="${i}">✕</button></div>`).join(''):'<div class="none">Nessuna corsa registrata.</div>';
+}
+function fmt(t){const m=Math.floor(t),s=Math.round((t-m)*60);return m+'′'+String(s).padStart(2,'0')+'″'}
+function esc(s){return s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function tab(w){$('pw').style.display=w?'':'none';$('pc').style.display=w?'none':'';$('tw').classList.toggle('on',w);$('tc').classList.toggle('on',!w)}
+$('tw').onclick=()=>tab(true);$('tc').onclick=()=>tab(false);
+$('prev').onclick=()=>{view.setMonth(view.getMonth()-1);render()};
+$('next').onclick=()=>{view.setMonth(view.getMonth()+1);render()};
+$('cal').onclick=e=>{const b=e.target.closest('.day[data-k]');if(b){sel=b.dataset.k;render()}};
+$('aw').onclick=()=>{
+ const n=$('en').value.trim(),s=+$('es').value,r=+$('er').value,k=+$('ek').value||0;
+ if(!n||!s||!r)return;
+ get(sel).w.push({n,s,r,k});save();['en','es','er','ek'].forEach(i=>$(i).value='');render();$('en').focus()};
+$('lw').onclick=e=>{const b=e.target.closest('[data-w]');if(b){data[sel].w.splice(b.dataset.w,1);save();render()}};
+$('lc').onclick=e=>{const b=e.target.closest('[data-c]');if(b){data[sel].c.splice(b.dataset.c,1);save();render()}};
+function live(){
+ const km=+$('ck').value,t=(+$('cm').value||0)+(+$('cs').value||0)/60;
+ const p=pace(km,t),v=vo2(km,t);
+ $('lp').textContent=p||'–';$('lv').textContent=v?v.toFixed(1):'–'}
+['ck','cm','cs'].forEach(i=>$(i).oninput=live);
+$('ac').onclick=()=>{
+ const km=+$('ck').value,t=(+$('cm').value||0)+(+$('cs').value||0)/60;
+ if(!km||!t)return;
+ get(sel).c.push({km,t,v:vo2(km,t)});save();['ck','cm','cs'].forEach(i=>$(i).value='');live();render()};
+function dts(k){const [y,m,d]=k.split('-').map(Number);return new Date(y,m-1,d)}
+function chart(pts,fy,inv,id){
+ if(!pts.length)return '<div class="none">Ancora nessun dato.</div>';
+ const W=600,H=220,L=50,R=16,T=14,B=28;
+ let mn=Math.min(...pts.map(p=>p.y)),mx=Math.max(...pts.map(p=>p.y));
+ if(mn===mx){mn-=1;mx+=1}const pd=(mx-mn)*.15;mn-=pd;mx+=pd;
+ const x0=pts[0].x,x1=pts[pts.length-1].x;
+ const X=x=>x1===x0?(L+W-R)/2:L+(x-x0)/(x1-x0)*(W-L-R);
+ const Y=y=>{const f=(y-mn)/(mx-mn);return T+(inv?f:1-f)*(H-T-B)};
+ let g='';
+ for(let i=0;i<4;i++){const v=mn+(mx-mn)*i/3,yy=Y(v).toFixed(1);g+=`<line x1="${L}" x2="${W-R}" y1="${yy}" y2="${yy}" stroke="#2a2a30"/><text x="${L-6}" y="${+yy+4}" text-anchor="end" fill="#8b8b95" font-size="11">${fy(v)}</text>`}
+ const path=pts.map((p,i)=>(i?'L':'M')+X(p.x).toFixed(1)+' '+Y(p.y).toFixed(1)).join('');
+ const area=path+`L${X(x1).toFixed(1)} ${H-B}L${X(x0).toFixed(1)} ${H-B}Z`;
+ const lab=x=>new Date(x).toLocaleDateString('it-IT',{day:'numeric',month:'short'});
+ const dots=pts.map(p=>`<circle cx="${X(p.x).toFixed(1)}" cy="${Y(p.y).toFixed(1)}" r="4.5" fill="#0b0b0d" stroke="#ff6a00" stroke-width="2.5"><title>${lab(p.x)}: ${fy(p.y)}</title></circle>`).join('');
+ return `<svg class="ch" viewBox="0 0 ${W} ${H}"><defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff6a00" stop-opacity=".35"/><stop offset="1" stop-color="#ff6a00" stop-opacity="0"/></linearGradient></defs>${g}<path d="${area}" fill="url(#${id})"/><path d="${path}" fill="none" stroke="#ff6a00" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>${dots}<text x="${L}" y="${H-8}" fill="#8b8b95" font-size="11">${lab(x0)}</text>${x1!==x0?`<text x="${W-R}" y="${H-8}" text-anchor="end" fill="#8b8b95" font-size="11">${lab(x1)}</text>`:''}</svg>`}
+const box=(b,s)=>`<div><b>${b}</b><small>${s}</small></div>`;
+const sgn=v=>(v>0?'+':v<0?'−':'')+Math.abs(v);
+function renderP(){
+ const ex={};
+ Object.keys(data).sort().forEach(k=>(data[k].w||[]).forEach(x=>{const id=x.n.toLowerCase();const e=ex[id]=ex[id]||{n:x.n,p:{}};e.p[k]=Math.max(e.p[k]||0,x.k)}));
+ const ids=Object.keys(ex).sort(),cur=$('pex').value;
+ $('pex').innerHTML=ids.map(i=>`<option value="${esc(i)}"${i===cur?' selected':''}>${esc(ex[i].n)}</option>`).join('');
+ const e=ex[$('pex').value];
+ if(!e){$('pws').innerHTML='';$('pwc').innerHTML='<div class="none">Registra un esercizio coi pesi per vedere i progressi.</div>'}
+ else{
+  const pts=Object.keys(e.p).sort().map(k=>({x:+dts(k),y:e.p[k]}));
+  const ys=pts.map(p=>p.y),d=Math.round((ys[ys.length-1]-ys[0])*10)/10;
+  $('pws').innerHTML=box(Math.max(...ys)+' kg','Record')+box(sgn(d)+' kg','Da prima seduta')+box(pts.length,'Sedute');
+  $('pwc').innerHTML=chart(pts,v=>Math.round(v*10)/10+'',false,'gw');
+ }
+ const runs=[];
+ Object.keys(data).sort().forEach(k=>(data[k].c||[]).forEach((c,i)=>runs.push({x:+dts(k)+i*1000,y:c.t/c.km,v:c.v,km:c.km})));
+ if(!runs.length){$('prs').innerHTML='';$('prc').innerHTML=$('pvc').innerHTML='<div class="none">Ancora nessuna corsa registrata.</div>';return}
+ const best=Math.min(...runs.map(r=>r.y)),last=runs[runs.length-1].y;
+ const ds=Math.round((last-runs[0].y)*60),tk=runs.reduce((a,r)=>a+r.km,0);
+ $('prs').innerHTML=box(pace(1,best),'Miglior passo')+box(pace(1,last),'Ultimo passo')+box(sgn(ds)+'″/km','Variazione totale')+box(tk.toFixed(1)+' km','Km totali')+box(runs.length,'Corse')+box(runs.some(r=>r.v)?Math.max(...runs.map(r=>r.v||0)).toFixed(1):'–','VO₂max record');
+ $('prc').innerHTML=chart(runs.map(r=>({x:r.x,y:r.y})),v=>pace(1,v),true,'gp');
+ $('pvc').innerHTML=chart(runs.filter(r=>r.v).map(r=>({x:r.x,y:r.v})),v=>v.toFixed(1),false,'gv');
+}
+$('pex').onchange=renderP;
+function vw(p){$('vcal').style.display=p?'none':'';$('vpers').style.display=p?'':'none';$('mc').classList.toggle('on',!p);$('mp').classList.toggle('on',p);if(p)renderP()}
+$('mc').onclick=()=>vw(false);$('mp').onclick=()=>vw(true);
+render();
+</script>
+</body>
+</html>
