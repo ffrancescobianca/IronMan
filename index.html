@@ -75,6 +75,12 @@ input:focus{outline:0;border-color:var(--or)}
 .pr{grid-column:1/-1;background:linear-gradient(135deg,#ff6a0022,#e8262e22);border:1px solid var(--or);border-radius:10px;padding:12px;font-size:16px;font-weight:700;text-align:center}
 .pr b{color:var(--or2)}
 #en{width:100%;max-width:100%;margin-bottom:8px}
+.addset{width:100%;background:none;border:1px dashed var(--or);color:var(--or2);border-radius:10px;padding:10px;font-weight:600;margin:0 0 10px}
+.addset:hover{background:#ff6a0018}
+.item.grp{display:block}
+.gh{color:var(--or2);font-weight:700;font-size:15px;margin-bottom:4px}
+.srow{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-top:1px solid var(--line);font-size:14px}
+.gh+.srow{border-top:0}
 .wl.go{position:fixed;inset:0;z-index:50;pointer-events:none;animation:wlOut .4s .8s ease forwards}
 .wl.go .wlc{animation:flipZoom .9s cubic-bezier(.65,.05,.35,1) forwards}
 .wl.go .wlc>*{animation:kidsOut .3s ease forwards}
@@ -204,7 +210,9 @@ function render(){
  const [yy,mm,dd]=sel.split('-').map(Number);
  $('dt').textContent=new Date(yy,mm-1,dd).toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long'});
  const e=data[sel]||{w:[],c:[]};
- $('lw').innerHTML=e.w.length?e.w.map((x,i)=>`<div class="item"><div><b>${esc(x.n)}</b><small>${x.m!=null?fmt(x.m):x.bw?`${x.s} serie × ${x.r} rip`:`${x.s} serie × ${x.r} rip · ${x.k} kg`}</small></div><button class="x" data-w="${i}">✕</button></div>`).join(''):'<div class="none">Nessun esercizio registrato.</div>';
+ const grp={},ord=[];
+ e.w.forEach((x,i)=>{const id=x.n.toLowerCase();if(!grp[id]){grp[id]={n:x.n,r:[]};ord.push(id)}grp[id].r.push([x,i])});
+ $('lw').innerHTML=ord.length?ord.map(id=>{const g=grp[id];return `<div class="item grp"><div class="gh">${esc(g.n)}</div>${g.r.map(([x,i])=>`<div class="srow"><span>${x.m!=null?fmt(x.m):x.bw?`${x.s} serie × ${x.r} rip`:`${x.s} serie × ${x.r} rip · ${x.k} kg`}</span><button class="x" data-w="${i}">✕</button></div>`).join('')}</div>`}).join(''):'<div class="none">Nessun esercizio registrato.</div>';
  $('lc').innerHTML=e.c.length?e.c.map((x,i)=>`<div class="item"><div><b>${x.km} km in ${fmt(x.t)}</b><small>${pace(x.km,x.t)} min/km · VO₂max ${x.v?x.v.toFixed(1):'–'}</small></div><button class="x" data-c="${i}">✕</button></div>`).join(''):'<div class="none">Nessuna corsa registrata.</div>';
 }
 function fmt(t){const m=Math.floor(t),s=Math.round((t-m)*60);return m+'′'+String(s).padStart(2,'0')+'″'}
@@ -217,11 +225,12 @@ $('cal').onclick=e=>{const b=e.target.closest('.day[data-k]');if(b){sel=b.datase
 const EX=['Panca Piana','Panca Inclinata','Chest Press','Croci ai cavi','Push up','Lat Machine','Trazioni','Pulley basso','Rematore','Military Press','Shoulder Press','Alzate Laterali','Alzate Frontali','Curl','Hammer Curl','Curl su panca scott','Spider Curl','Curl alternato','Squat','Goblet Squat','Leg Press','Leg Extension','Bulgarian Squat','Stacco rumeno','Leg curl','Stacco da terra','Calf','Crunch','Plank'].sort((a,b)=>a.localeCompare(b,'it'));
 $('en').innerHTML='<option value="">Scegli esercizio…</option>'+EX.map(x=>`<option>${x}</option>`).join('');
 const BW=['Push up','Trazioni'];
+let curBW=false;
+const rowH=bw=>`<div class="row" style="grid-template-columns:${bw?'1fr 1fr':'1fr 1fr 1fr'}"><input class="rs" type="number" min="1" inputmode="numeric"><input class="rr" type="number" min="1" inputmode="numeric">${bw?'':'<input class="rk" type="number" min="0" step="0.5" inputmode="decimal">'}</div>`;
 function buildRows(bw){
- const c=bw?'1fr 1fr':'1fr 1fr 1fr';
- let h=`<div class="row" style="grid-template-columns:${c};margin-bottom:2px"><label>Serie</label><label>Ripetizioni</label>${bw?'':'<label>Peso (kg)</label>'}</div>`;
- for(let i=0;i<4;i++)h+=`<div class="row" style="grid-template-columns:${c}"><input class="rs" type="number" min="1" inputmode="numeric"><input class="rr" type="number" min="1" inputmode="numeric">${bw?'':'<input class="rk" type="number" min="0" step="0.5" inputmode="decimal">'}</div>`;
- $('rw').innerHTML=h}
+ curBW=bw;
+ $('rw').innerHTML=`<div class="row" style="grid-template-columns:${bw?'1fr 1fr':'1fr 1fr 1fr'};margin-bottom:2px"><label>Serie</label><label>Ripetizioni</label>${bw?'':'<label>Peso (kg)</label>'}</div>`+rowH(bw)+'<button type="button" class="addset">+ Aggiungi serie</button>'}
+$('rw').addEventListener('click',e=>{const b=e.target.closest('.addset');if(b)b.insertAdjacentHTML('beforebegin',rowH(curBW))});
 $('en').onchange=()=>{const n=$('en').value,p=n==='Plank';$('rw').style.display=p?'none':'';$('rp').style.display=p?'':'none';if(!p)buildRows(BW.includes(n))};
 $('aw').onclick=()=>{
  const n=$('en').value;if(!n)return;const w=get(sel).w;
