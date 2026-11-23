@@ -133,12 +133,8 @@ svg.ch{width:100%;height:auto;display:block}
       <div class="tabs"><button class="tab on" id="tw">🏋️ Pesi</button><button class="tab" id="tc">🏃 Cardio</button></div>
       <div id="pw">
         <label>Esercizio</label><select id="en"></select>
-        <div class="row" id="rw">
-          <div><label>Serie</label><input id="es" type="number" min="1" inputmode="numeric"></div>
-          <div><label>Ripetizioni</label><input id="er" type="number" min="1" inputmode="numeric"></div>
-          <div><label>Peso (kg)</label><input id="ek" type="number" min="0" step="0.5" inputmode="decimal"></div>
-        </div>
-        <div class="row" id="rp" style="display:none;grid-template-columns:1fr"><div><label>Minuti</label><input id="pm" type="number" min="0" step="0.5" inputmode="decimal"></div></div>
+        <div id="rw"></div>
+        <div class="row" id="rp" style="display:none;grid-template-columns:1fr 1fr"><div><label>Minuti</label><input id="pm" type="number" min="0" inputmode="numeric"></div><div><label>Secondi</label><input id="ps" type="number" min="0" max="59" inputmode="numeric"></div></div>
         <button class="add" id="aw">Aggiungi esercizio</button>
         <div id="lw"></div>
       </div>
@@ -208,7 +204,7 @@ function render(){
  const [yy,mm,dd]=sel.split('-').map(Number);
  $('dt').textContent=new Date(yy,mm-1,dd).toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long'});
  const e=data[sel]||{w:[],c:[]};
- $('lw').innerHTML=e.w.length?e.w.map((x,i)=>`<div class="item"><div><b>${esc(x.n)}</b><small>${x.m!=null?x.m+' min':`${x.s} serie × ${x.r} rip · ${x.k} kg`}</small></div><button class="x" data-w="${i}">✕</button></div>`).join(''):'<div class="none">Nessun esercizio registrato.</div>';
+ $('lw').innerHTML=e.w.length?e.w.map((x,i)=>`<div class="item"><div><b>${esc(x.n)}</b><small>${x.m!=null?fmt(x.m):x.bw?`${x.s} serie × ${x.r} rip`:`${x.s} serie × ${x.r} rip · ${x.k} kg`}</small></div><button class="x" data-w="${i}">✕</button></div>`).join(''):'<div class="none">Nessun esercizio registrato.</div>';
  $('lc').innerHTML=e.c.length?e.c.map((x,i)=>`<div class="item"><div><b>${x.km} km in ${fmt(x.t)}</b><small>${pace(x.km,x.t)} min/km · VO₂max ${x.v?x.v.toFixed(1):'–'}</small></div><button class="x" data-c="${i}">✕</button></div>`).join(''):'<div class="none">Nessuna corsa registrata.</div>';
 }
 function fmt(t){const m=Math.floor(t),s=Math.round((t-m)*60);return m+'′'+String(s).padStart(2,'0')+'″'}
@@ -220,12 +216,25 @@ $('next').onclick=()=>{view.setMonth(view.getMonth()+1);render()};
 $('cal').onclick=e=>{const b=e.target.closest('.day[data-k]');if(b){sel=b.dataset.k;render()}};
 const EX=['Panca Piana','Panca Inclinata','Chest Press','Croci ai cavi','Push up','Lat Machine','Trazioni','Pulley basso','Rematore','Military Press','Shoulder Press','Alzate Laterali','Alzate Frontali','Curl','Hammer Curl','Curl su panca scott','Spider Curl','Curl alternato','Squat','Goblet Squat','Leg Press','Leg Extension','Bulgarian Squat','Stacco rumeno','Leg curl','Stacco da terra','Calf','Crunch','Plank'].sort((a,b)=>a.localeCompare(b,'it'));
 $('en').innerHTML='<option value="">Scegli esercizio…</option>'+EX.map(x=>`<option>${x}</option>`).join('');
-$('en').onchange=()=>{const p=$('en').value==='Plank';$('rw').style.display=p?'none':'';$('rp').style.display=p?'':'none'};
+const BW=['Push up','Trazioni'];
+function buildRows(bw){
+ const c=bw?'1fr 1fr':'1fr 1fr 1fr';
+ let h=`<div class="row" style="grid-template-columns:${c};margin-bottom:2px"><label>Serie</label><label>Ripetizioni</label>${bw?'':'<label>Peso (kg)</label>'}</div>`;
+ for(let i=0;i<4;i++)h+=`<div class="row" style="grid-template-columns:${c}"><input class="rs" type="number" min="1" inputmode="numeric"><input class="rr" type="number" min="1" inputmode="numeric">${bw?'':'<input class="rk" type="number" min="0" step="0.5" inputmode="decimal">'}</div>`;
+ $('rw').innerHTML=h}
+$('en').onchange=()=>{const n=$('en').value,p=n==='Plank';$('rw').style.display=p?'none':'';$('rp').style.display=p?'':'none';if(!p)buildRows(BW.includes(n))};
 $('aw').onclick=()=>{
- const n=$('en').value;if(!n)return;
- if(n==='Plank'){const m=+$('pm').value;if(!m)return;get(sel).w.push({n,m});$('pm').value=''}
- else{const s=+$('es').value,r=+$('er').value,k=+$('ek').value||0;if(!s||!r)return;get(sel).w.push({n,s,r,k});['es','er','ek'].forEach(i=>$(i).value='')}
+ const n=$('en').value;if(!n)return;const w=get(sel).w;
+ if(n==='Plank'){const t=(+$('pm').value||0)+(+$('ps').value||0)/60;if(!t)return;w.push({n,m:t});$('pm').value=$('ps').value=''}
+ else{
+  const bw=BW.includes(n);let ok=false;
+  [...$('rw').querySelectorAll('.row')].slice(1).forEach(row=>{
+   const s=+row.querySelector('.rs').value,r=+row.querySelector('.rr').value,kk=row.querySelector('.rk'),k=kk?+kk.value||0:0;
+   if(s&&r){w.push(bw?{n,s,r,k:0,bw:true}:{n,s,r,k});ok=true}});
+  if(!ok)return;
+  buildRows(bw)}
  save();render()};
+buildRows(false);
 $('lw').onclick=e=>{const b=e.target.closest('[data-w]');if(b){data[sel].w.splice(b.dataset.w,1);save();render()}};
 $('lc').onclick=e=>{const b=e.target.closest('[data-c]');if(b){data[sel].c.splice(b.dataset.c,1);save();render()}};
 function live(){
@@ -257,17 +266,19 @@ const box=(b,s)=>`<div><b>${b}</b><small>${s}</small></div>`;
 const sgn=v=>(v>0?'+':v<0?'−':'')+Math.abs(v);
 function renderP(){
  const ex={};
- Object.keys(data).sort().forEach(k=>(data[k].w||[]).forEach(x=>{const id=x.n.toLowerCase();const e=ex[id]=ex[id]||{n:x.n,p:{}};e.u=x.m!=null?'min':'kg';e.p[k]=Math.max(e.p[k]||0,x.m!=null?x.m:x.k)}));
+ Object.keys(data).sort().forEach(k=>(data[k].w||[]).forEach(x=>{const id=x.n.toLowerCase();const e=ex[id]=ex[id]||{n:x.n,p:{}};e.u=x.m!=null?'min':x.bw?'rip':'kg';e.p[k]=Math.max(e.p[k]||0,x.m!=null?x.m:x.bw?x.r:x.k)}));
  const ids=Object.keys(ex).sort(),cur=$('pex').value;
  $('pex').innerHTML=ids.map(i=>`<option value="${esc(i)}"${i===cur?' selected':''}>${esc(ex[i].n)}</option>`).join('');
  const e=ex[$('pex').value];
  if(!e){$('pws').innerHTML='';$('pwc').innerHTML='<div class="none">Registra un esercizio coi pesi per vedere i progressi.</div>'}
  else{
   const pts=Object.keys(e.p).sort().map(k=>({x:+dts(k),y:e.p[k]}));
-  const ys=pts.map(p=>p.y),d=Math.round((ys[ys.length-1]-ys[0])*10)/10;
-  $('pws').innerHTML=box(Math.max(...ys)+' '+e.u,'Record')+box(sgn(d)+' '+e.u,'Da prima seduta')+box(pts.length,'Sedute');
-  $('pwl').textContent=e.u==='min'?'Tempo massimo per seduta (min)':'Peso massimo per seduta (kg)';
-  $('pwc').innerHTML=chart(pts,v=>Math.round(v*10)/10+'',false,'gw');
+  const ys=pts.map(p=>p.y),u=e.u,mx=Math.max(...ys),d=ys[ys.length-1]-ys[0];
+  const F=v=>u==='min'?fmt(v):Math.round(v*10)/10+' '+u;
+  const D=u==='min'?sgn(Math.round(d*60))+'″':sgn(Math.round(d*10)/10)+' '+u;
+  $('pws').innerHTML=box(F(mx),'Record')+box(D,'Da prima seduta')+box(pts.length,'Sedute');
+  $('pwl').textContent=u==='min'?'Tempo massimo per seduta':u==='rip'?'Ripetizioni massime per serie':'Peso massimo per seduta (kg)';
+  $('pwc').innerHTML=chart(pts,v=>u==='min'?fmt(v):Math.round(v*10)/10+'',false,'gw');
  }
  const runs=[];
  Object.keys(data).sort().forEach(k=>(data[k].c||[]).forEach((c,i)=>runs.push({x:+dts(k)+i*1000,y:c.t/c.km,v:c.v,km:c.km})));
