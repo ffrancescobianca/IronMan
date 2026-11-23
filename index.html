@@ -64,7 +64,7 @@ input:focus{outline:0;border-color:var(--or)}
 .live small{color:var(--mut);font-size:11px}
 .hint{color:var(--mut);font-size:12px;margin-top:10px;line-height:1.4}
 .none{color:var(--mut);font-size:13px;margin-top:10px}
-.wl{position:relative;overflow:hidden;perspective:1400px;min-height:100vh;display:none;align-items:center;justify-content:center;padding:24px;text-align:center}
+.wl{overflow:hidden;perspective:1400px;min-height:100vh;display:none;align-items:center;justify-content:center;padding:24px;text-align:center}
 .wlc{width:100%;max-width:380px;background:linear-gradient(150deg,#1e1416,#151518 60%);border:1px solid var(--line);border-radius:24px;padding:32px 24px;box-shadow:0 0 90px #ff3b3b18}
 .wli{width:110px;height:110px;border-radius:24px;margin-bottom:14px;box-shadow:0 0 40px #ff6a0040}
 .wlt{font-size:28px;font-weight:800;letter-spacing:4px;margin-bottom:22px}
@@ -81,19 +81,6 @@ input:focus{outline:0;border-color:var(--or)}
 .gh{color:var(--or2);font-weight:700;font-size:15px;margin-bottom:4px}
 .srow{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-top:1px solid var(--line);font-size:14px}
 .gh+.srow{border-top:0}
-.ver{position:absolute;bottom:calc(16px + env(safe-area-inset-bottom,0px));left:0;right:0;text-align:center;color:#8b8b95;opacity:.45;font-size:12px;letter-spacing:1px}
-.wl.go .ver{animation:kidsOut .3s ease forwards}
-.acts{display:flex;gap:2px;align-items:center;margin-left:8px}
-.mini{background:var(--card2);border:1px solid var(--line);color:var(--tx);border-radius:10px;padding:7px 11px;font-size:13px;font-weight:600}
-.mini:hover:not(:disabled){border-color:var(--or)}
-.mini:disabled{opacity:.35;cursor:default}
-.head{flex-wrap:wrap;gap:8px}
-.note{color:var(--or2);font-size:12px;margin:-4px 0 8px}
-.note:empty{display:none}
-.eds{display:grid;gap:6px;flex:1}
-.eds input{padding:8px}
-.srow.ed{align-items:flex-end;gap:6px}
-.ok{background:linear-gradient(135deg,#ff6a00,#f0382c);color:#111;border-radius:8px;padding:7px 11px;font-weight:700;font-size:15px}
 .wl.go{position:fixed;inset:0;z-index:50;pointer-events:none;animation:wlOut .4s .8s ease forwards}
 .wl.go .wlc{animation:flipZoom .9s cubic-bezier(.65,.05,.35,1) forwards}
 .wl.go .wlc>*{animation:kidsOut .3s ease forwards}
@@ -130,7 +117,6 @@ svg.ch{width:100%;height:auto;display:block}
       <button class="lnk" id="chg">Non sei tu? Cambia nome</button>
     </div>
   </div>
-<div class="ver">versione 1.0.0</div>
 </div>
 <div class="wrap" id="app" style="display:none">
   <h1>IRON <span>MAN</span></h1>
@@ -149,8 +135,7 @@ svg.ch{width:100%;height:auto;display:block}
       <div class="legend"><span><i class="dot w"></i>Pesi</span><span><i class="dot c"></i>Cardio</span></div>
     </div>
     <div class="card">
-      <div class="head"><h2 id="dt"></h2><div class="acts" style="margin:0"><button class="mini" id="cpy">Copia</button><button class="mini" id="pst">Incolla</button></div></div>
-      <div class="note" id="cnote"></div>
+      <div class="head"><h2 id="dt"></h2></div>
       <div class="tabs"><button class="tab on" id="tw">🏋️ Pesi</button><button class="tab" id="tc">🏃 Cardio</button></div>
       <div id="pw">
         <label>Esercizio</label><select id="en"></select>
@@ -208,7 +193,6 @@ function vo2(km,t){if(!km||!t)return null;const v=km*1000/t;
  const o=-4.60+0.182258*v+0.000104*v*v;
  const f=0.8+0.1894393*Math.exp(-0.012778*t)+0.2989558*Math.exp(-0.1932605*t);
  const r=o/f;return r>0&&isFinite(r)?r:null}
-let ed=null,clip=null,nt;
 function render(){
  const y=view.getFullYear(),mo=view.getMonth();
  $('mt').textContent=MESI[mo]+' '+y;
@@ -226,19 +210,10 @@ function render(){
  const [yy,mm,dd]=sel.split('-').map(Number);
  $('dt').textContent=new Date(yy,mm-1,dd).toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long'});
  const e=data[sel]||{w:[],c:[]};
- $('cpy').disabled=!(e.w.length||e.c.length);$('pst').textContent=clip?'Incolla ('+(clip.w.length+clip.c.length)+')':'Incolla';$('pst').disabled=!clip;
  const grp={},ord=[];
  e.w.forEach((x,i)=>{const id=x.n.toLowerCase();if(!grp[id]){grp[id]={n:x.n,r:[]};ord.push(id)}grp[id].r.push([x,i])});
- const eW=(x,i)=>{
-  if(ed&&ed.t==='w'&&ed.i===i){
-   if(x.m!=null){const tot=Math.round(x.m*60);return `<div class="srow ed"><div class="eds" style="grid-template-columns:1fr 1fr"><div><label>Min</label><input id="ed1" type="number" min="0" value="${Math.floor(tot/60)}"></div><div><label>Sec</label><input id="ed2" type="number" min="0" max="59" value="${tot%60}"></div></div>${okc()}</div>`}
-   const bw=!!x.bw;
-   return `<div class="srow ed"><div class="eds" style="grid-template-columns:repeat(${bw?2:3},1fr)"><div><label>Serie</label><input id="ed1" type="number" min="1" value="${x.s}"></div><div><label>Rip.</label><input id="ed2" type="number" min="1" value="${x.r}"></div>${bw?'':`<div><label>Kg</label><input id="ed3" type="number" min="0" step="0.5" value="${x.k}"></div>`}</div>${okc()}</div>`}
-  return `<div class="srow"><span>${x.m!=null?fmt(x.m):x.bw?`${x.s} serie × ${x.r} rip`:`${x.s} serie × ${x.r} rip · ${x.k} kg`}</span>${acts(i)}</div>`};
- $('lw').innerHTML=ord.length?ord.map(id=>{const g=grp[id];return `<div class="item grp"><div class="gh">${esc(g.n)}</div>${g.r.map(([x,i])=>eW(x,i)).join('')}</div>`}).join(''):'<div class="none">Nessun esercizio registrato.</div>';
- $('lc').innerHTML=e.c.length?e.c.map((x,i)=>{
-  if(ed&&ed.t==='c'&&ed.i===i){const tot=Math.round(x.t*60);return `<div class="item"><div class="eds" style="grid-template-columns:repeat(3,1fr)"><div><label>Km</label><input id="ed1" type="number" min="0" step="0.01" value="${x.km}"></div><div><label>Min</label><input id="ed2" type="number" min="0" value="${Math.floor(tot/60)}"></div><div><label>Sec</label><input id="ed3" type="number" min="0" max="59" value="${tot%60}"></div></div>${okc()}</div>`}
-  return `<div class="item"><div><b>${x.km} km in ${fmt(x.t)}</b><small>${pace(x.km,x.t)} min/km · VO₂max ${x.v?x.v.toFixed(1):'–'}</small></div>${acts(i)}</div>`}).join(''):'<div class="none">Nessuna corsa registrata.</div>';
+ $('lw').innerHTML=ord.length?ord.map(id=>{const g=grp[id];return `<div class="item grp"><div class="gh">${esc(g.n)}</div>${g.r.map(([x,i])=>`<div class="srow"><span>${x.m!=null?fmt(x.m):x.bw?`${x.s} serie × ${x.r} rip`:`${x.s} serie × ${x.r} rip · ${x.k} kg`}</span><button class="x" data-w="${i}">✕</button></div>`).join('')}</div>`}).join(''):'<div class="none">Nessun esercizio registrato.</div>';
+ $('lc').innerHTML=e.c.length?e.c.map((x,i)=>`<div class="item"><div><b>${x.km} km in ${fmt(x.t)}</b><small>${pace(x.km,x.t)} min/km · VO₂max ${x.v?x.v.toFixed(1):'–'}</small></div><button class="x" data-c="${i}">✕</button></div>`).join(''):'<div class="none">Nessuna corsa registrata.</div>';
 }
 function fmt(t){const m=Math.floor(t),s=Math.round((t-m)*60);return m+'′'+String(s).padStart(2,'0')+'″'}
 function esc(s){return s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
@@ -246,7 +221,7 @@ function tab(w){$('pw').style.display=w?'':'none';$('pc').style.display=w?'none'
 $('tw').onclick=()=>tab(true);$('tc').onclick=()=>tab(false);
 $('prev').onclick=()=>{view.setMonth(view.getMonth()-1);render()};
 $('next').onclick=()=>{view.setMonth(view.getMonth()+1);render()};
-$('cal').onclick=e=>{const b=e.target.closest('.day[data-k]');if(b){sel=b.dataset.k;ed=null;render()}};
+$('cal').onclick=e=>{const b=e.target.closest('.day[data-k]');if(b){sel=b.dataset.k;render()}};
 const EX=['Panca Piana','Panca Inclinata','Chest Press','Croci ai cavi','Push up','Lat Machine','Trazioni','Pulley basso','Rematore','Military Press','Shoulder Press','Alzate Laterali','Alzate Frontali','Curl','Hammer Curl','Curl su panca scott','Spider Curl','Curl alternato','Squat','Goblet Squat','Leg Press','Leg Extension','Bulgarian Squat','Stacco rumeno','Leg curl','Stacco da terra','Calf','Crunch','Plank'].sort((a,b)=>a.localeCompare(b,'it'));
 $('en').innerHTML='<option value="">Scegli esercizio…</option>'+EX.map(x=>`<option>${x}</option>`).join('');
 const BW=['Push up','Trazioni'];
@@ -269,6 +244,8 @@ $('aw').onclick=()=>{
   buildRows(bw)}
  save();render()};
 buildRows(false);
+$('lw').onclick=e=>{const b=e.target.closest('[data-w]');if(b){data[sel].w.splice(b.dataset.w,1);save();render()}};
+$('lc').onclick=e=>{const b=e.target.closest('[data-c]');if(b){data[sel].c.splice(b.dataset.c,1);save();render()}};
 function live(){
  const km=+$('ck').value,t=(+$('cm').value||0)+(+$('cs').value||0)/60;
  const p=pace(km,t),v=vo2(km,t);
@@ -325,35 +302,6 @@ function renderP(){
 $('pex').onchange=renderP;
 function vw(p){$('vcal').style.display=p?'none':'';$('vpers').style.display=p?'':'none';$('mc').classList.toggle('on',!p);$('mp').classList.toggle('on',p);if(p)renderP()}
 $('mc').onclick=()=>vw(false);$('mp').onclick=()=>vw(true);
-function okc(){return '<div class="acts"><button class="ok" data-ok="1">✓</button><button class="x" data-cancel="1">✕</button></div>'}
-function acts(i){return `<div class="acts"><button class="x" data-edit="${i}">✎</button><button class="x" data-del="${i}">✕</button></div>`}
-function note(t){const n=$('cnote');n.textContent=t;clearTimeout(nt);nt=setTimeout(()=>{n.textContent=''},2600)}
-function saveEdit(t){
- const x=data[sel][t][ed.i],v=n=>+$(n).value;
- if(t==='w'){
-  if(x.m!=null){const m=(v('ed1')||0)+(v('ed2')||0)/60;if(!m)return;x.m=m}
-  else{const a=v('ed1'),r=v('ed2');if(!a||!r)return;x.s=a;x.r=r;if(!x.bw)x.k=v('ed3')||0}
- }else{
-  const km=v('ed1'),m=(v('ed2')||0)+(v('ed3')||0)/60;if(!km||!m)return;x.km=km;x.t=m;x.v=vo2(km,m)}
- ed=null;save();render()}
-function act(e,t){
- const b=e.target.closest('button');if(!b)return;
- if(b.dataset.del!=null){data[sel][t].splice(+b.dataset.del,1);ed=null;save();render()}
- else if(b.dataset.edit!=null){ed={t,i:+b.dataset.edit};render()}
- else if(b.dataset.cancel!=null){ed=null;render()}
- else if(b.dataset.ok!=null){saveEdit(t)}}
-$('lw').onclick=e=>act(e,'w');$('lc').onclick=e=>act(e,'c');
-$('cpy').onclick=()=>{
- const e=data[sel];if(!e||!(e.w.length||e.c.length))return;
- clip={w:JSON.parse(JSON.stringify(e.w)),c:JSON.parse(JSON.stringify(e.c)),from:sel};
- try{localStorage.setItem('ironman_clip',JSON.stringify(clip))}catch(_){}
- note('Allenamento copiato. Scegli un altro giorno e premi Incolla.');render()};
-$('pst').onclick=()=>{
- if(!clip)return;
- if(clip.from===sel){note('Scegli un altro giorno per incollare.');return}
- const d=get(sel);clip.w.forEach(x=>d.w.push({...x}));clip.c.forEach(x=>d.c.push({...x}));
- ed=null;save();note('Allenamento incollato.');render()};
-try{clip=JSON.parse(localStorage.getItem('ironman_clip')||'null');if(clip&&!(Array.isArray(clip.w)&&Array.isArray(clip.c)))clip=null}catch(_){clip=null}
 let name='';
 try{name=localStorage.getItem('ironman_name')||''}catch(e){}
 function setName(){$('mpn').textContent=name||'Personale'}
